@@ -131,10 +131,28 @@ class Agent:
         )
 
         try:
-            response = await self.model.chat_complete(messages)
-            self._conversation.append(Message(role="assistant", content=response))
+            # 使用流式输出
+            stream_id = f"{self.name}-{id(message)}"
+            full_response = ""
+            async for chunk in self.model.chat(messages):
+                full_response += chunk
+                await event_bus.emit(
+                    EventType.MESSAGE_STREAM,
+                    {
+                        "stream_id": stream_id,
+                        "sender": self.name,
+                        "chunk": chunk,
+                        "accumulated": full_response,
+                        "group_id": self.group_id,
+                    },
+                )
+            await event_bus.emit(
+                EventType.MESSAGE_STREAM_END,
+                {"stream_id": stream_id, "sender": self.name, "group_id": self.group_id},
+            )
+            self._conversation.append(Message(role="assistant", content=full_response))
             await self.set_state(AgentState.DONE, detail="完成", progress=1.0)
-            return response
+            return full_response
         except Exception as e:
             logger.error(f"Agent {self.name} error: {e}")
             await self.set_state(AgentState.FAILED, detail=str(e))

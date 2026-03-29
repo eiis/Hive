@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, FolderOpen } from "lucide-react";
 import { useGroupStore } from "../store/groupStore";
+import { FolderPicker } from "../components/FolderPicker";
 
 interface AgentConfig {
   key: string;
@@ -41,6 +42,7 @@ export function CreateSpacePage() {
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [folderPickerOpen, setFolderPickerOpen] = useState(false);
 
   const addAgent = () => {
     setAgents([...agents, { key: makeKey(), name: "", role: "developer", model: "", system_prompt: "" }]);
@@ -142,14 +144,31 @@ export function CreateSpacePage() {
             工作目录
             <span className="text-gray-600 font-normal ml-2">Agent 在此目录下读写文件和执行命令</span>
           </label>
-          <input
-            type="text"
-            value={workspace}
-            onChange={(e) => setWorkspace(e.target.value)}
-            placeholder="/path/to/your/project（留空使用默认目录）"
-            className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-hive-500 transition-colors font-mono"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={workspace}
+              onChange={(e) => setWorkspace(e.target.value)}
+              placeholder="/path/to/your/project（留空使用默认目录）"
+              className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-hive-500 transition-colors font-mono"
+            />
+            <button
+              type="button"
+              onClick={() => setFolderPickerOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-800 border border-gray-700 hover:border-hive-500 text-gray-300 hover:text-hive-400 rounded-lg text-sm transition-colors shrink-0"
+            >
+              <FolderOpen size={15} />
+              浏览
+            </button>
+          </div>
         </div>
+
+        <FolderPicker
+          open={folderPickerOpen}
+          initial={workspace}
+          onSelect={(path) => setWorkspace(path)}
+          onClose={() => setFolderPickerOpen(false)}
+        />
 
         {/* Agents */}
         <div className="mb-8">

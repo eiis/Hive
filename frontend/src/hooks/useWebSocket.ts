@@ -10,6 +10,8 @@ export function useWebSocket() {
   const updateAgent = useAgentStore((s) => s.updateAgent);
   const updateTask = useAgentStore((s) => s.updateTask);
   const addMessage = useMessageStore((s) => s.addMessage);
+  const updateStream = useMessageStore((s) => s.updateStream);
+  const endStream = useMessageStore((s) => s.endStream);
 
   const connect = useCallback(() => {
     // 防止重复连接
@@ -28,9 +30,23 @@ export function useWebSocket() {
       try {
         const wsEvent: WSEvent = JSON.parse(event.data);
         switch (wsEvent.type) {
-          case "agent.status.changed":
-            updateAgent(wsEvent.data as unknown as AgentStatus);
+          case "agent.status.changed": {
+            const status = wsEvent.data as unknown as AgentStatus;
+            updateAgent(status);
+            // 将 agent 动作变更插入聊天流
+            if (status.state !== "idle" && status.detail) {
+              addMessage({
+                id: `action-${status.name}-${Date.now()}`,
+                sender: status.name,
+                target: "",
+                content: status.detail,
+                group_id: "",
+                timestamp: new Date().toISOString(),
+                type: "agent_action",
+              } as ChatMessage);
+            }
             break;
+          }
           case "message.sent":
             addMessage(wsEvent.data as unknown as ChatMessage);
             break;
@@ -39,6 +55,16 @@ export function useWebSocket() {
           case "task.completed":
             updateTask(wsEvent.data as unknown as Task);
             break;
+          case "message.stream": {
+            const d = wsEvent.data as { stream_id: string; sender: string; accumulated: string; group_id: string };
+            updateStream(d.stream_id, d.sender, d.accumulated, d.group_id);
+            break;
+          }
+          case "message.stream.end": {
+            const d = wsEvent.data as { stream_id: string };
+            endStream(d.stream_id);
+            break;
+          }
         }
       } catch (e) {
         console.error("Failed to parse WebSocket message:", e);

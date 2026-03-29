@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
 import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..core.event_bus import EventType, event_bus
@@ -326,3 +328,34 @@ async def assign_task(group_id: str, req: AssignTaskRequest):
 async def list_models():
     from ..models.registry import model_registry
     return {"models": model_registry.list_models()}
+
+
+# ── File System Browse ──
+
+
+@router.get("/fs/browse")
+async def browse_directory(path: str = Query(default="")):
+    """浏览目录，返回子目录列表供前端目录选择器使用"""
+    if not path:
+        path = str(Path.home())
+
+    target = Path(path).resolve()
+    if not target.is_dir():
+        raise HTTPException(status_code=400, detail="路径不存在或不是目录")
+
+    dirs: list[dict] = []
+    try:
+        for entry in sorted(target.iterdir()):
+            if entry.name.startswith("."):
+                continue
+            if entry.is_dir():
+                dirs.append({"name": entry.name, "path": str(entry)})
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="没有权限访问该目录")
+
+    parent = str(target.parent) if target != target.parent else None
+    return {
+        "current": str(target),
+        "parent": parent,
+        "dirs": dirs,
+    }

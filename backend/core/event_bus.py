@@ -18,6 +18,8 @@ class EventType(StrEnum):
     TASK_UPDATED = "task.updated"
     TASK_COMPLETED = "task.completed"
     GROUP_UPDATED = "group.updated"
+    MESSAGE_STREAM = "message.stream"
+    MESSAGE_STREAM_END = "message.stream.end"
 
 
 class Event(BaseModel):

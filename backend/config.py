@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     openai_compatible_model: str = ""
     gemini_api_key: str = ""
 
+    jwt_secret_key: str = "hive-dev-secret-change-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 1440  # 24 hours
+
     host: str = "0.0.0.0"
     port: int = 8000
     database_url: str = "sqlite+aiosqlite:///./hive.db"

@@ -23,6 +23,7 @@ export interface ChatMessage {
   content: string;
   group_id: string;
   timestamp: string;
+  type?: "message" | "agent_action";
 }
 
 export interface Task {

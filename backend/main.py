@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import routes, ws
+from .api import auth, routes, ws
 from .config import settings
 from .core.agent import Agent
 from .core.foreman import Foreman
@@ -90,6 +90,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(routes.router)
 app.include_router(ws.router)
 
